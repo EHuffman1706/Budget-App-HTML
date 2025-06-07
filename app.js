@@ -45,7 +45,7 @@ function renderTable() {
     if (entry.type === "income") {
       dateDisplay = `Received: ${entry.dateReceived}`;
     } else {
-      dateDisplay = `Due: ${entry.dueDate}<br>Paid: ${entry.paidDate}`;
+      dateDisplay = `Due: ${entry.dueDate || 'N/A'}<br>Paid: ${entry.paidDate}`;
     }
 
     const row = document.createElement("tr");
@@ -116,7 +116,7 @@ form.addEventListener("submit", (e) => {
   const amount = parseFloat(amountInput.value);
 
   const dateReceived = dateReceivedInput.value;
-  const dueDate = dueDateInput.value;
+  const dueDate = dueDateInput.value || "";
   const paidDate = paidDateInput.value;
 
   if (isNaN(amount) || description === "") return;
@@ -126,7 +126,7 @@ form.addEventListener("submit", (e) => {
   if (type === "income") {
     entry.dateReceived = dateReceived;
   } else {
-    entry.dueDate = dueDate;
+    if (dueDate) entry.dueDate = dueDate;
     entry.paidDate = paidDate;
   }
 
