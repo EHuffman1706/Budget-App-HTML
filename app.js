@@ -4,19 +4,22 @@ let editIndex = null;
 document.getElementById('entryForm').onsubmit = function(e) {
   e.preventDefault();
 
-  const amount = document.getElementById('amount').value;
+  const amount = parseFloat(document.getElementById('amount').value);
   const type = document.getElementById('type').value;
   const category = document.getElementById('category').value;
   const date = document.getElementById('date').value;
 
+  if (isNaN(amount)) {
+    alert("Please enter a valid number for amount.");
+    return;
+  }
+
   const entries = JSON.parse(localStorage.getItem('entries')) || [];
 
   if (editIndex !== null) {
-    // Update existing entry
     entries[editIndex] = { amount, type, category, date };
     editIndex = null;
   } else {
-    // Add new entry
     entries.push({ amount, type, category, date });
   }
 
@@ -30,7 +33,17 @@ function renderEntries() {
   const table = document.getElementById('entryTable').querySelector('tbody');
   table.innerHTML = '';
 
+  let totalIncome = 0;
+  let totalExpenses = 0;
+
   entries.forEach((entry, index) => {
+    const amount = parseFloat(entry.amount);
+    if (entry.type === 'income') {
+      totalIncome += amount;
+    } else if (entry.type === 'expense') {
+      totalExpenses += amount;
+    }
+
     const row = document.createElement('tr');
     row.innerHTML = `
       <td>${entry.amount}</td>
@@ -44,6 +57,9 @@ function renderEntries() {
     `;
     table.appendChild(row);
   });
+
+  const balance = totalIncome - totalExpenses;
+  document.getElementById('balanceDisplay').textContent = `Remaining Balance: $${balance.toFixed(2)}`;
 }
 
 function deleteEntry(index) {
@@ -65,5 +81,4 @@ function editEntry(index) {
   editIndex = index;
 }
 
-// Load saved entries on page load
 window.addEventListener('load', renderEntries);
