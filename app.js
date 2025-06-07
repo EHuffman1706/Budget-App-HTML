@@ -1,4 +1,4 @@
-let entries = [];
+let entries = JSON.parse(localStorage.getItem("budgetEntries")) || [];
 let isEditing = false;
 let editIndex = null;
 
@@ -15,6 +15,10 @@ const tableBody = document.querySelector("#entry-table tbody");
 const balanceEl = document.getElementById("balance");
 const addButton = document.getElementById("add-button");
 const liveRegion = document.getElementById("live-region");
+
+function saveEntries() {
+  localStorage.setItem("budgetEntries", JSON.stringify(entries));
+}
 
 typeInput.addEventListener("change", () => {
   if (typeInput.value === "income") {
@@ -93,6 +97,7 @@ function setupDeleteButton(button, index) {
       }, 3000);
     } else {
       entries.splice(index, 1);
+      saveEntries();
       renderTable();
       updateBalance();
       liveRegion.textContent = "Entry deleted.";
@@ -114,7 +119,6 @@ form.addEventListener("submit", (e) => {
   const type = typeInput.value;
   const description = descInput.value.trim();
   const amount = parseFloat(amountInput.value);
-
   const dateReceived = dateReceivedInput.value;
   const dueDate = dueDateInput.value || "";
   const paidDate = paidDateInput.value;
@@ -141,6 +145,8 @@ form.addEventListener("submit", (e) => {
     liveRegion.textContent = "Entry added.";
   }
 
+  saveEntries();
+
   descInput.value = "";
   amountInput.value = "";
   dateReceivedInput.value = "";
@@ -154,3 +160,5 @@ form.addEventListener("submit", (e) => {
 
 updateButtonLabel();
 typeInput.dispatchEvent(new Event("change"));
+renderTable();
+updateBalance();
