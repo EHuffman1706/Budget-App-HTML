@@ -1,84 +1,111 @@
-
+let entries = [];
+let isEditing = false;
 let editIndex = null;
 
-document.getElementById('entryForm').onsubmit = function(e) {
-  e.preventDefault();
+const form = document.getElementById("entry-form");
+const typeInput = document.getElementById("type");
+const descInput = document.getElementById("description");
+const amountInput = document.getElementById("amount");
+const tableBody = document.querySelector("#entry-table tbody");
+const balanceEl = document.getElementById("balance");
+const addButton = document.getElementById("add-button");
+const liveRegion = document.getElementById("live-region");
 
-  const amount = parseFloat(document.getElementById('amount').value);
-  const type = document.getElementById('type').value;
-  const category = document.getElementById('category').value;
-  const date = document.getElementById('date').value;
+function updateButtonLabel() {
+  addButton.textContent = isEditing ? "Update Entry" : "Add Entry";
+}
 
-  if (isNaN(amount)) {
-    alert("Please enter a valid number for amount.");
-    return;
-  }
+function updateBalance() {
+  let balance = 0;
+  entries.forEach(e => {
+    balance += e.type === "income" ? e.amount : -e.amount;
+  });
+  balanceEl.textContent = balance.toFixed(2);
+}
 
-  const entries = JSON.parse(localStorage.getItem('entries')) || [];
-
-  if (editIndex !== null) {
-    entries[editIndex] = { amount, type, category, date };
-    editIndex = null;
-  } else {
-    entries.push({ amount, type, category, date });
-  }
-
-  localStorage.setItem('entries', JSON.stringify(entries));
-  document.getElementById('entryForm').reset();
-  renderEntries();
-};
-
-function renderEntries() {
-  const entries = JSON.parse(localStorage.getItem('entries')) || [];
-  const table = document.getElementById('entryTable').querySelector('tbody');
-  table.innerHTML = '';
-
-  let totalIncome = 0;
-  let totalExpenses = 0;
-
+function renderTable() {
+  tableBody.innerHTML = "";
   entries.forEach((entry, index) => {
-    const amount = parseFloat(entry.amount);
-    if (entry.type === 'income') {
-      totalIncome += amount;
-    } else if (entry.type === 'expense') {
-      totalExpenses += amount;
-    }
-
-    const row = document.createElement('tr');
+    const row = document.createElement("tr");
     row.innerHTML = `
-      <td>${entry.amount}</td>
       <td>${entry.type}</td>
-      <td>${entry.category}</td>
-      <td>${entry.date}</td>
+      <td>${entry.description}</td>
+      <td>$${entry.amount.toFixed(2)}</td>
       <td>
-        <button onclick="editEntry(${index})">Edit</button>
-        <button onclick="deleteEntry(${index})">Delete</button>
+        <button class="edit">Edit</button>
+        <button class="delete">Delete</button>
       </td>
     `;
-    table.appendChild(row);
+    const editBtn = row.querySelector(".edit");
+    const deleteBtn = row.querySelector(".delete");
+
+    editBtn.addEventListener("click", () => {
+      isEditing = true;
+      editIndex = index;
+      typeInput.value = entry.type;
+      descInput.value = entry.description;
+      amountInput.value = entry.amount;
+      updateButtonLabel();
+    });
+
+    setupDeleteButton(deleteBtn, index);
+    tableBody.appendChild(row);
   });
-
-  const balance = totalIncome - totalExpenses;
-  document.getElementById('balanceDisplay').textContent = `Remaining Balance: $${balance.toFixed(2)}`;
 }
 
-function deleteEntry(index) {
-  const entries = JSON.parse(localStorage.getItem('entries')) || [];
-  entries.splice(index, 1);
-  localStorage.setItem('entries', JSON.stringify(entries));
-  renderEntries();
+function setupDeleteButton(button, index) {
+  let confirmed = false;
+  button.addEventListener("click", function () {
+    if (!confirmed) {
+      button.textContent = "Confirm Delete?";
+      confirmed = true;
+      setTimeout(() => {
+        button.textContent = "Delete";
+        confirmed = false;
+      }, 3000);
+    } else {
+      entries.splice(index, 1);
+      renderTable();
+      updateBalance();
+      liveRegion.textContent = "Entry deleted.";
+    }
+  });
 }
 
-function editEntry(index) {
-  const entries = JSON.parse(localStorage.getItem('entries')) || [];
-  const entry = entries[index];
-
-  document.getElementById('amount').value = entry.amount;
-  document.getElementById('type').value = entry.type;
-  document.getElementById('category').value = entry.category;
-  document.getElementById('date').value = entry.date;
-
-  editIndex = index;
+function showSavedFeedback() {
+  const originalText = addButton.textContent;
+  addButton.textContent = "Saved!";
+  setTimeout(() => {
+    addButton.textContent = originalText;
+  }, 2000);
 }
 
-window.addEventListener('load', renderEntries);
+form.addEventListener("submit", (e) => {
+  e.preventDefault();
+  const type = typeInput.value;
+  const description = descInput.value;
+  const amount = parseFloat(amountInput.value);
+
+  if (isNaN(amount) || description.trim() === "") return;
+
+  const entry = { type, description, amount };
+
+  if (isEditing && editIndex !== null) {
+    entries[editIndex] = entry;
+    isEditing = false;
+    editIndex = null;
+    updateButtonLabel();
+    liveRegion.textContent = "Entry updated.";
+  } else {
+    entries.push(entry);
+    liveRegion.textContent = "Entry added.";
+  }
+
+  descInput.value = "";
+  amountInput.value = "";
+  renderTable();
+  updateBalance();
+  showSavedFeedback();
+});
+
+updateButtonLabel();
